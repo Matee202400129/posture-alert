@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PostureAlert</title>
+  <meta name="description" content="เว็บแอปเชื่อมอุปกรณ์แจ้งเตือนหลังค่อม PostureAlert ผ่าน Bluetooth">
+  <meta name="theme-color" content="#F3F5F4">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="PostureAlert">
+  <link rel="preload" href="fonts/ibm-plex-sans-thai-thai-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <script>
+    // ตั้งธีมก่อนหน้าเว็บแสดงผล เพื่อไม่ให้จอแวบเป็นสีอื่น
+    try {
+      var t = localStorage.getItem('pa.theme');
+      if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-bluetooth" viewBox="0 0 24 24"><path d="m7 7 10 10-5 5V2l5 5L7 17"/></symbol>
+      <symbol id="i-live" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+      <symbol id="i-stats" viewBox="0 0 24 24"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></symbol>
+      <symbol id="i-settings" viewBox="0 0 24 24"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></symbol>
+      <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></symbol>
+      <symbol id="i-screen" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+      <symbol id="i-ok" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></symbol>
+      <symbol id="i-warn" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></symbol>
+      <symbol id="i-move" viewBox="0 0 24 24"><path d="m5 9-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></symbol>
+      <symbol id="i-bed" viewBox="0 0 24 24"><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/></symbol>
+      <symbol id="i-snooze" viewBox="0 0 24 24"><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7M10.3 21a1.94 1.94 0 0 0 3.4 0M2 2l20 20"/></symbol>
+      <symbol id="i-vibrate" viewBox="0 0 24 24"><path d="m2 8 2 2-2 2 2 2-2 2M22 8l-2 2 2 2-2 2 2 2"/><rect x="8" y="5" width="8" height="14" rx="1"/></symbol>
+      <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+      <symbol id="i-back" viewBox="0 0 64 64"><path d="M29 8c-3 9 8 16 7 27-.7 8-7 13-9 21" stroke-width="9"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" aria-hidden="true"><use href="#i-back"/></svg>
+      <span>PostureAlert</span>
+    </div>
+    <span id="linkChip" class="chip" role="status"></span>
+    <button id="presentBtn" class="icon-btn" type="button" aria-label="เปิดโหมดนำเสนอ" title="โหมดนำเสนอ">
+      <svg class="icon" aria-hidden="true"><use href="#i-screen"/></svg>
+    </button>
+  </header>
+
+  <div class="page">
+    <section id="linkBar" class="linkbar" aria-label="การเชื่อมต่ออุปกรณ์">
+      <div class="linkbar-text">
+        <strong id="linkTitle"></strong>
+        <span id="linkDesc"></span>
+      </div>
+      <button id="linkBtn" class="btn btn-primary" type="button">
+        <svg class="icon" aria-hidden="true"><use href="#i-bluetooth"/></svg>
+        <span id="linkBtnText">เชื่อมต่ออุปกรณ์</span>
+      </button>
+    </section>
+
+    <section id="errorPanel" class="error" role="alert" hidden>
+      <svg class="icon" aria-hidden="true"><use href="#i-warn"/></svg>
+      <div>
+        <strong id="errorTitle"></strong>
+        <p id="errorFix"></p>
+      </div>
+      <button id="errorClose" class="icon-btn" type="button" aria-label="ปิดข้อความนี้">
+        <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+      </button>
+    </section>
+
+    <main id="main">
+      <!-- หน้าหลักแบบสด -->
+      <section id="view-live" class="view" aria-labelledby="h-live">
+        <h1 id="h-live" class="sr-only">หน้าหลัก</h1>
+
+        <div class="live-grid">
+          <div class="live-col">
+            <article id="hero" class="hero" data-tone="idle">
+              <div id="alarmBand" class="alarm-band" hidden>
+                <svg class="icon" aria-hidden="true"><use href="#i-vibrate"/></svg>
+                <span>อุปกรณ์กำลังสั่นเตือน</span>
+              </div>
+              <div class="hero-head">
+                <svg class="icon icon-lg" aria-hidden="true"><use id="heroIcon" href="#i-ok"/></svg>
+                <span id="heroState" class="hero-state" role="status">กำลังรอข้อมูล</span>
+                <span class="demo-tag" data-demo-only>ข้อมูลจำลอง</span>
+              </div>
+              <div class="hero-value">
+                <span id="heroCurve" class="hero-curve">–</span>
+                <span class="hero-unit">ความโค้งหลัง<br><span id="heroThr">เกณฑ์เตือน –</span></span>
+              </div>
+              <p id="heroHint" class="hero-hint"></p>
+            </article>
+
+            <div id="scenarioRow" class="scenario">
+              <label for="scenario">สถานการณ์จำลอง</label>
+              <select id="scenario" class="select">
+                <option value="auto">อัตโนมัติ (สลับท่าไปเรื่อย ๆ)</option>
+                <option value="upright">นั่งตรง</option>
+                <option value="slouch">หลังค่อม</option>
+                <option value="moving">กำลังขยับ</option>
+                <option value="lying">นอน / ก้มมาก</option>
+                <option value="sensor">เซนเซอร์มีปัญหา</option>
+              </select>
+            </div>
+
+            <article class="card">
+              <h2>ท่านั่งจากด้านข้าง</h2>
+              <div id="figureLive" class="figure-box"></div>
+              <p id="sensorNote" class="note" hidden>ตอนนี้อุปกรณ์ใช้เซนเซอร์ตัวเดียว ค่าตัวล่างอาจไม่เปลี่ยนตามท่านั่ง</p>
+            </article>
+          </div>
+
+          <div class="live-col">
+            <article class="card">
+              <div class="card-head">
+                <h2>ความโค้งหลัง 60 วินาทีล่าสุด</h2>
+                <span class="demo-tag demo-tag-soft" data-demo-only>ข้อมูลจำลอง</span>
+              </div>
+              <canvas id="liveChart" class="live-chart" role="img" aria-label="กราฟความโค้งหลัง 60 วินาทีล่าสุด"></canvas>
+              <dl class="mini-stats">
+                <div><dt>สูงสุด</dt><dd id="chartMax">–</dd></div>
+                <div><dt>เกินเกณฑ์</dt><dd id="chartOver">–</dd></div>
+              </dl>
+            </article>
+
+            <article class="card">
+              <h2>ควบคุมอุปกรณ์</h2>
+              <div class="controls">
+                <button class="btn btn-control" type="button" data-control data-action="cal">
+                  <svg class="icon" aria-hidden="true"><use href="#i-save"/></svg>
+                  <span>บันทึกท่าตรง</span>
+                </button>
+                <button id="snoozeBtn" class="btn btn-control" type="button" data-control data-action="snooze" aria-pressed="false">
+                  <svg class="icon" aria-hidden="true"><use href="#i-snooze"/></svg>
+                  <span id="snoozeText">พักเตือน 30 นาที</span>
+                </button>
+                <button class="btn btn-control" type="button" data-control data-action="buzz">
+                  <svg class="icon" aria-hidden="true"><use href="#i-vibrate"/></svg>
+                  <span>ทดสอบสั่น</span>
+                </button>
+                <button class="btn btn-control" type="button" data-control data-action="reset">
+                  <svg class="icon" aria-hidden="true"><use href="#i-reset"/></svg>
+                  <span>ล้างสถิติ</span>
+                </button>
+              </div>
+              <p class="note">นั่งหลังตรงก่อนกด "บันทึกท่าตรง" เพราะอุปกรณ์จะใช้ท่าตอนนั้นเป็นค่าศูนย์</p>
+              <button class="btn btn-danger btn-block" type="button" data-control data-action="off">
+                <svg class="icon" aria-hidden="true"><use href="#i-power"/></svg>
+                <span>ปิดเครื่อง</span>
+              </button>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- สถิติ -->
+      <section id="view-stats" class="view" aria-labelledby="h-stats" hidden>
+        <div class="view-head">
+          <h1 id="h-stats">สถิติ</h1>
+          <span class="demo-tag demo-tag-soft" data-demo-only>ข้อมูลจำลอง</span>
+        </div>
+
+        <h2 class="section-label">ตั้งแต่เปิดเครื่องครั้งนี้</h2>
+        <div class="tiles">
+          <div class="tile">
+            <span class="tile-label">แบตเตอรี่</span>
+            <span id="statBatt" class="tile-value">–</span>
+            <span class="meter" aria-hidden="true"><span id="statBattBar"></span></span>
+            <span id="statBattMv" class="tile-sub"></span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">เวลานั่งตรง</span>
+            <span id="statPct" class="tile-value">–</span>
+            <span id="statGood" class="tile-sub"></span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">เวลาหลังค่อม</span>
+            <span id="statSlouch" class="tile-value tile-value-sm">–</span>
+          </div>
+          <div class="tile">
+            <span class="tile-label">จำนวนครั้งที่เตือน</span>
+            <span id="statAlerts" class="tile-value">–</span>
+          </div>
+        </div>
+
+        <article class="card">
+          <div class="card-head">
+            <h2>ย้อนหลัง 7 วัน</h2>
+          </div>
+          <p id="weekSummary" class="note"></p>
+          <ul class="legend" aria-label="คำอธิบายสี">
+            <li><span class="swatch swatch-good"></span>นั่งตรง</li>
+            <li><span class="swatch swatch-slouch"></span>หลังค่อม</li>
+            <li class="legend-note">ตัวเลขบนแท่งคือ % เวลานั่งตรง</li>
+          </ul>
+          <div class="week-chart">
+            <span id="weekAxisTop" class="week-axis-top"></span>
+            <div id="weekBars" class="week-bars"></div>
+          </div>
+          <p id="weekDetail" class="week-detail" aria-live="polite"></p>
+          <details class="week-table">
+            <summary>ดูเป็นตาราง</summary>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th scope="col">วัน</th><th scope="col">นั่งตรง</th><th scope="col">ค่อม</th><th scope="col">%</th><th scope="col">เตือน</th></tr></thead>
+                <tbody id="weekTable"></tbody>
+              </table>
+            </div>
+          </details>
+          <p id="historyNote" class="note"></p>
+          <button id="clearHistoryBtn" class="btn btn-ghost btn-block" type="button">ล้างประวัติในเครื่องนี้</button>
+        </article>
+      </section>
+
+      <!-- ตั้งค่า -->
+      <section id="view-settings" class="view" aria-labelledby="h-settings" hidden>
+        <div class="view-head">
+          <h1 id="h-settings">ตั้งค่า</h1>
+          <span class="demo-tag demo-tag-soft" data-demo-only>ข้อมูลจำลอง</span>
+        </div>
+
+        <article class="card">
+          <h2>การเตือนของอุปกรณ์</h2>
+          <div class="slider">
+            <div class="slider-head">
+              <label for="thrSlider">เกณฑ์เตือน</label>
+              <output id="thrValue" for="thrSlider" class="slider-value">15°</output>
+            </div>
+            <input id="thrSlider" type="range" min="5" max="40" step="1" value="15" data-control>
+            <div class="slider-ends" aria-hidden="true"><span>5° เตือนง่าย</span><span>40° เตือนยาก</span></div>
+            <p id="thrReply" class="device-reply" aria-live="polite"></p>
+          </div>
+          <div class="slider">
+            <div class="slider-head">
+              <label for="delaySlider">เวลาค้างก่อนเตือน</label>
+              <output id="delayValue" for="delaySlider" class="slider-value">3 วินาที</output>
+            </div>
+            <input id="delaySlider" type="range" min="1" max="30" step="1" value="3" data-control>
+            <div class="slider-ends" aria-hidden="true"><span>1 วินาที</span><span>30 วินาที</span></div>
+            <p id="delayReply" class="device-reply" aria-live="polite"></p>
+          </div>
+          <p class="note">แอปจะส่งค่าเมื่อปล่อยนิ้ว อุปกรณ์เก็บค่าไว้ในเครื่อง ปิดเปิดใหม่แล้วค่ายังอยู่</p>
+        </article>
+
+        <article class="card">
+          <h2>แจ้งเตือนบนมือถือ</h2>
+          <label class="switch">
+            <span class="switch-text">
+              <span>สั่นมือถือเมื่ออุปกรณ์เริ่มเตือน</span>
+              <small id="vibrateNote"></small>
+            </span>
+            <input id="vibrateToggle" type="checkbox">
+          </label>
+          <label class="switch">
+            <span class="switch-text">
+              <span>แสดงการแจ้งเตือนบนหน้าจอ</span>
+              <small id="notifyNote"></small>
+            </span>
+            <input id="notifyToggle" type="checkbox">
+          </label>
+          <p class="note">เว็บไม่ได้รับข้อมูลเมื่อปิดหน้าจอ หรือสลับไปแอปอื่นนาน การเตือนหลักยังเป็นการสั่นของตัวอุปกรณ์เอง</p>
+        </article>
+
+        <article class="card">
+          <h2>หน้าตา</h2>
+          <div class="field">
+            <label for="themeSelect">ธีม</label>
+            <select id="themeSelect" class="select">
+              <option value="auto">ตามเครื่อง</option>
+              <option value="light">สว่าง</option>
+              <option value="dark">มืด</option>
+            </select>
+          </div>
+        </article>
+      </section>
+
+      <!-- ช่วยเหลือ -->
+      <section id="view-help" class="view" aria-labelledby="h-help" hidden>
+        <div class="view-head"><h1 id="h-help">ช่วยเหลือ</h1></div>
+
+        <article class="card">
+          <h2>เริ่มใช้งาน</h2>
+          <p>ดูวิธีติดเซนเซอร์และบันทึกท่าตรงทีละขั้นตอน</p>
+          <button id="wizardOpen" class="btn btn-primary btn-block" type="button">เปิดตัวช่วยตั้งค่า</button>
+          <button id="installBtn" class="btn btn-ghost btn-block" type="button" hidden>ติดตั้งแอปลงหน้าจอโฮม</button>
+        </article>
+
+        <article class="card">
+          <h2>ใช้กับเบราว์เซอร์ไหนได้บ้าง</h2>
+          <ul class="plain-list">
+            <li><strong>Android, Windows, macOS:</strong> ใช้ Chrome หรือ Edge</li>
+            <li><strong>iPhone และ iPad:</strong> ต้องใช้แอปเบราว์เซอร์ <strong>Bluefy</strong> จาก App Store เพราะ Safari ไม่รองรับ Web Bluetooth</li>
+            <li>ต้องเปิดเว็บผ่าน HTTPS เท่านั้น</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h2>ข้อจำกัดที่ควรรู้</h2>
+          <ul class="plain-list">
+            <li>เว็บไม่ได้รับข้อมูลเมื่อปิดหน้าจอ หรือสลับไปแอปอื่นนาน</li>
+            <li>การเตือนหลักคือการสั่นของตัวอุปกรณ์ ซึ่งทำงานได้โดยไม่ต้องเปิดเว็บ</li>
+            <li>ตัวเลขในอุปกรณ์หายทุกครั้งที่ปิดเครื่อง ประวัติ 7 วันจึงสะสมเฉพาะตอนที่เปิดเว็บเชื่อมต่อ และเก็บอยู่ในมือถือเครื่องนี้เท่านั้น</li>
+            <li>อุปกรณ์หยุดเตือนเองตอนนอน (เอียงเกิน 60°) และตอนพักการเตือน</li>
+            <li>แบตต่ำกว่า 3.3V อุปกรณ์จะปิดตัวเอง</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <h2>สีของสถานะ</h2>
+          <ul class="tone-list">
+            <li><span class="tone-dot" data-tone="ok"></span>เขียว: นั่งตรง</li>
+            <li><span class="tone-dot" data-tone="bad"></span>แดง: หลังค่อม</li>
+            <li><span class="tone-dot" data-tone="idle"></span>เทา: พักเตือน นอน หรือกำลังขยับ</li>
+            <li><span class="tone-dot" data-tone="warn"></span>ส้ม: เซนเซอร์มีปัญหา</li>
+          </ul>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <nav class="tabbar" aria-label="เมนูหลัก">
+    <a href="#live" data-tab="live"><svg class="icon" aria-hidden="true"><use href="#i-live"/></svg><span>หน้าหลัก</span></a>
+    <a href="#stats" data-tab="stats"><svg class="icon" aria-hidden="true"><use href="#i-stats"/></svg><span>สถิติ</span></a>
+    <a href="#settings" data-tab="settings"><svg class="icon" aria-hidden="true"><use href="#i-settings"/></svg><span>ตั้งค่า</span></a>
+    <a href="#help" data-tab="help"><svg class="icon" aria-hidden="true"><use href="#i-help"/></svg><span>ช่วยเหลือ</span></a>
+  </nav>
+
+  <!-- โหมดนำเสนอ -->
+  <section id="present" class="present" data-tone="idle" aria-label="โหมดนำเสนอ" hidden>
+    <button id="presentClose" class="icon-btn present-close" type="button" aria-label="ออกจากโหมดนำเสนอ">
+      <svg class="icon" aria-hidden="true"><use href="#i-close"/></svg>
+    </button>
+    <span class="demo-tag present-demo" data-demo-only>ข้อมูลจำลอง</span>
+    <div id="presentFigure" class="present-figure"></div>
+    <div class="present-side">
+      <div class="present-state">
+        <svg class="icon" aria-hidden="true"><use id="presentIcon" href="#i-ok"/></svg>
+        <span id="presentState">กำลังรอข้อมูล</span>
+      </div>
+      <div id="presentCurve" class="present-curve">–</div>
+      <div class="present-caption">ความโค้งหลัง</div>
+      <div id="presentAlarm" class="present-alarm" hidden>
+        <svg class="icon" aria-hidden="true"><use href="#i-vibrate"/></svg>
+        <span>กำลังสั่นเตือน</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- กล่องยืนยัน -->
+  <dialog id="confirmDialog" class="dialog" aria-labelledby="confirmTitle" aria-describedby="confirmBody">
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmBody"></p>
+    <div class="dialog-actions">
+      <button id="confirmNo" class="btn btn-ghost" type="button">ยกเลิก</button>
+      <button id="confirmYes" class="btn btn-danger-solid" type="button"></button>
+    </div>
+  </dialog>
+
+  <!-- ตัวช่วยตั้งค่าครั้งแรก -->
+  <dialog id="wizard" class="dialog wizard" aria-labelledby="wizardTitle">
+    <div class="wizard-top">
+      <span id="wizardStep" class="wizard-step"></span>
+      <button id="wizardSkip" class="btn-link" type="button">ข้าม</button>
+    </div>
+    <div class="wizard-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    <h2 id="wizardTitle" tabindex="-1"></h2>
+
+    <div data-step="1" class="wizard-body">
+      <svg class="wizard-art" viewBox="0 0 320 300" role="img" aria-label="ภาพหลังมองจากด้านหลัง เซนเซอร์ตัวบนอยู่ระหว่างสะบัก ตัวล่างอยู่เหนือขอบกางเกง 5 ถึง 10 เซนติเมตร ลูกศรของทั้งสองตัวชี้ไปทางเดียวกัน">
+        <circle cx="120" cy="34" r="24" class="art-body"/>
+        <path d="M108 56h24v18h-24z" class="art-body"/>
+        <path d="M62 86c0-10 28-18 58-18s58 8 58 18l-8 88c-2 22 2 36 4 56H66c2-20 6-34 4-56z" class="art-body"/>
+        <path d="M84 102c8 14 8 32 0 46M156 102c-8 14-8 32 0 46" class="art-line"/>
+        <rect x="62" y="230" width="116" height="60" rx="6" class="art-pants"/>
+        <path d="M120 74v156" class="art-spine"/>
+        <g class="art-sensor"><rect x="108" y="108" width="24" height="30" rx="4"/><path d="M120 131v-16m-5 5 5-5 5 5"/></g>
+        <g class="art-sensor"><rect x="108" y="166" width="24" height="30" rx="4"/><path d="M120 189v-16m-5 5 5-5 5 5"/></g>
+        <path d="M120 200v28m-6-28h12m-12 28h12" class="art-measure"/>
+        <path d="M132 123h60" class="art-leader"/>
+        <path d="M132 181h60" class="art-leader"/>
+        <path d="M128 214h64" class="art-leader"/>
+        <text x="196" y="118" class="art-label">ตัวบน</text>
+        <text x="196" y="136" class="art-sub">ระหว่างสะบัก</text>
+        <text x="196" y="176" class="art-label">ตัวล่าง</text>
+        <text x="196" y="194" class="art-sub">เหนือขอบกางเกง</text>
+        <text x="196" y="219" class="art-label">5–10 ซม.</text>
+      </svg>
+      <ul class="plain-list">
+        <li>ติดเซนเซอร์<strong>ตัวบน</strong>ระหว่างสะบัก</li>
+        <li>ติดเซนเซอร์<strong>ตัวล่าง</strong>เหนือขอบกางเกง 5–10 ซม.</li>
+        <li>หันทั้งสองตัวไป<strong>ทางเดียวกัน</strong></li>
+      </ul>
+    </div>
+
+    <div data-step="2" class="wizard-body" hidden>
+      <div id="wizardFigure2" class="figure-box figure-box-sm"></div>
+      <p>นั่งหลังตรงตามสบาย ไหล่ไม่เกร็ง แล้วกดปุ่มด้านล่าง อุปกรณ์จะใช้ท่านี้เป็นค่าศูนย์</p>
+      <p id="wizardDemoNote" class="note">ตอนนี้ยังเป็นโหมดตัวอย่าง ถ้ามีอุปกรณ์ให้กดเชื่อมต่อก่อน</p>
+      <button id="wizardConnect" class="btn btn-ghost btn-block" type="button">
+        <svg class="icon" aria-hidden="true"><use href="#i-bluetooth"/></svg>
+        <span>เชื่อมต่ออุปกรณ์</span>
+      </button>
+      <button id="wizardCal" class="btn btn-primary btn-block" type="button" data-control>
+        <svg class="icon" aria-hidden="true"><use href="#i-save"/></svg>
+        <span>บันทึกท่าตรง</span>
+      </button>
+      <p id="wizardCalDone" class="done-note" role="status" hidden>
+        <svg class="icon" aria-hidden="true"><use href="#i-ok"/></svg>
+        <span>บันทึกท่าตรงแล้ว</span>
+      </p>
+    </div>
+
+    <div data-step="3" class="wizard-body" hidden>
+      <div id="wizardFigure3" class="figure-box figure-box-sm"></div>
+      <div class="wizard-live">
+        <span id="wizardCurve" class="wizard-curve">–</span>
+        <span id="wizardState" class="wizard-state"></span>
+      </div>
+      <p id="wizardTryText">ลองค่อมหลังให้ค่าเกินเกณฑ์ ภาพจะงอตาม และอุปกรณ์จะสั่นเมื่อค้างจนครบเวลาที่ตั้งไว้</p>
+      <button id="wizardDemoSlouch" class="btn btn-ghost btn-block" type="button">จำลองการค่อมหลัง</button>
+      <p id="wizardTryDone" class="done-note" role="status" hidden>
+        <svg class="icon" aria-hidden="true"><use href="#i-ok"/></svg>
+        <span>เยี่ยม อุปกรณ์จับการค่อมหลังได้แล้ว</span>
+      </p>
+    </div>
+
+    <div class="dialog-actions">
+      <button id="wizardBack" class="btn btn-ghost" type="button">ย้อนกลับ</button>
+      <button id="wizardNext" class="btn btn-primary" type="button">ถัดไป</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <noscript><p class="noscript">เว็บแอปนี้ต้องเปิดใช้งาน JavaScript</p></noscript>
+</body>
+</html>

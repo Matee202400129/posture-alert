@@ -1,0 +1,15 @@
+{
+  "name": "posture-alert-webapp",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "เว็บแอป PWA ภาษาไทยสำหรับอุปกรณ์แจ้งเตือนหลังค่อม PostureAlert",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "test": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "node tests/e2e/run.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "1.49.1"
+  }
+}
