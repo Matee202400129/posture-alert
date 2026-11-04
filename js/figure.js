@@ -126,11 +126,11 @@ export const createBackFigure = container => {
 
   return {
     /** tone: ok | bad | idle | warn */
-    set({ upper, lower, tone = 'idle', alarm = false, known = true }) {
+    set({ upper, lower, tone = 'idle', alarm = false, known = true, twoSensors = true }) {
       svg.dataset.tone = tone;
       svg.classList.toggle('is-alarm', alarm);
       labelText = known
-        ? { upper: `บน ${fmtDeg(upper)}`, lower: `ล่าง ${fmtDeg(lower)}` }
+        ? { upper: `บน ${fmtDeg(upper)}`, lower: twoSensors ? `ล่าง ${fmtDeg(lower)}` : 'ล่าง –' }
         : { upper: 'บน –', lower: 'ล่าง –' };
       title.textContent = known
         ? `ภาพหลังมองจากด้านข้าง เซนเซอร์ตัวบนเอียง ${fmtDeg(upper)} ตัวล่างเอียง ${fmtDeg(lower)}`

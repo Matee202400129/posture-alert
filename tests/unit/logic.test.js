@@ -131,6 +131,34 @@ test('ตัวจำลอง: เซนเซอร์เอียงเกิ
   assert.equal(p.alarm, false);
 });
 
+test('ตัวจำลอง: ลำดับสถานะตรงกับเฟิร์มแวร์ นอนมาก่อนพักเตือน และค่อมมาก่อนขยับ', () => {
+  const lying = stableSim();
+  lying.setScenario('lying');
+  lying.command('snooze');
+  assert.equal(run(lying, 15).state, STATE.LYING);
+
+  const moving = stableSim();
+  moving.setScenario('moving');
+  assert.equal(run(moving, 15).state, STATE.MOVING);
+  moving.command('thr=5');
+  const p = run(moving, 1);
+  assert.equal(p.state, STATE.SLOUCH, `curve ${p.curve} เกินเกณฑ์ 5° ต้องเป็นหลังค่อมแม้กำลังขยับ`);
+});
+
+test('ตัวจำลอง: เวลาขยับไม่นับเป็นนั่งตรง และ cal หยุดการเตือนทันที', () => {
+  const moving = stableSim();
+  moving.setScenario('moving');
+  const p = run(moving, 10);
+  assert.equal(p.slouch, 0);
+  assert.ok(p.good < 2, `good = ${p.good}`);
+
+  const sim = stableSim();
+  sim.setScenario('slouch');
+  assert.equal(run(sim, 15).alarm, true);
+  sim.command('cal');
+  assert.equal(parse(sim.packet()).alarm, false);
+});
+
 test('ตัวจำลอง: snooze เปิด/ปิดได้ และนับถอยหลัง', () => {
   const sim = stableSim();
   sim.setScenario('slouch');

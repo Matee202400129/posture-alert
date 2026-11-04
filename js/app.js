@@ -1,5 +1,5 @@
 // ตัวควบคุมหน้าเว็บ: รับ packet จากอุปกรณ์จริงหรือตัวจำลอง แล้วอัปเดตทุกหน้าจอจากข้อมูลชุดเดียวกัน
-import { parse, battPercent, STATE, CMD } from './protocol.js';
+import { parse, battPercent, effectiveThreshold, releaseThreshold, STATE, CMD } from './protocol.js';
 import { BleLink, BLUETOOTH_OFF, bleErrorMessage, checkSupport } from './ble.js';
 import { Simulator } from './simulator.js';
 import { HistoryStore, demoDays } from './history.js';
@@ -20,12 +20,14 @@ const STATE_INFO = {
   [STATE.OK]: { label: 'นั่งตรง', tone: 'ok', icon: 'i-ok', hint: () => 'ท่านั่งดีมาก รักษาไว้แบบนี้' },
   [STATE.SLOUCH]: {
     label: 'หลังค่อม', tone: 'bad', icon: 'i-warn',
-    hint: p => `ยืดหลังขึ้น ค่าต้องลดลงต่ำกว่า ${Math.max(0, p.thr - 5)}° จึงจะหยุดเตือน`,
+    hint: p => (p.alarm
+      ? `ยืดหลังขึ้น ค่าต้องลดลงต่ำกว่า ${releaseThreshold(p)}° จึงจะหยุดเตือน`
+      : `ยืดหลังขึ้นภายใน ${p.delay} วินาที อุปกรณ์จะได้ไม่สั่น`),
   },
   [STATE.MOVING]: { label: 'กำลังขยับ', tone: 'idle', icon: 'i-move', hint: () => 'รอให้นิ่งก่อน อุปกรณ์จะกลับมาวัดต่อเอง' },
   [STATE.LYING]: { label: 'นอน / ก้มมาก', tone: 'idle', icon: 'i-bed', hint: () => 'เซนเซอร์เอียงเกิน 60° อุปกรณ์จึงหยุดเตือนชั่วคราว' },
   [STATE.SNOOZE]: { label: 'พักเตือน', tone: 'idle', icon: 'i-snooze', hint: p => `จะกลับมาเตือนในอีก ${fmtClock(p.snooze)} นาที` },
-  [STATE.SENSOR]: { label: 'เซนเซอร์มีปัญหา', tone: 'warn', icon: 'i-warn', hint: () => 'ตรวจสายเซนเซอร์ทั้งสองตัว แล้วปิดเปิดเครื่องใหม่' },
+  [STATE.SENSOR]: { label: 'เซนเซอร์มีปัญหา', tone: 'warn', icon: 'i-warn', hint: () => 'เซนเซอร์ตัวบนไม่ตอบสนอง ตรวจสายให้แน่น แล้วอุปกรณ์จะกลับมาทำงานเอง' },
 };
 const UNKNOWN_STATE = { label: 'ไม่ทราบสถานะ', tone: 'idle', icon: 'i-warn', hint: () => 'เฟิร์มแวร์ส่งสถานะที่แอปไม่รู้จัก' };
 
@@ -201,7 +203,7 @@ const renderLink = () => {
   bar.dataset.link = key;
   $('linkTitle').textContent = info.title;
   $('linkDesc').textContent = key === 'reconnecting'
-    ? `ลองครั้งที่ ${app.attempt} จะลองไปเรื่อย ๆ จนกว่าจะกลับมา ค่าบนจอคือค่าล่าสุดก่อนหลุด`
+    ? `ลองครั้งที่ ${app.attempt} ค่าบนจอคือค่าล่าสุดก่อนหลุด ถ้าเครื่องปิดอยู่ให้กดปุ่มบนเครื่อง`
     : info.desc;
   $('linkBtnText').textContent = info.btn;
   const btn = $('linkBtn');
@@ -223,7 +225,7 @@ const handlePacket = dv => {
   const now = performance.now();
   app.pkt = p;
   app.lastAt = now;
-  chart.push(now, p.state === STATE.SENSOR ? null : p.curve, p.thr);
+  chart.push(now, p.state === STATE.SENSOR ? null : p.curve, effectiveThreshold(p));
   if (app.mode === 'ble') history.record(p);
 
   if (p.alarm && !app.prevAlarm) fireMobileAlert();
@@ -264,12 +266,12 @@ const renderHero = (p, stale) => {
   $('heroIcon').setAttribute('href', `#${info.icon}`);
   setText('heroState', stale ? `ค่าล่าสุด: ${info.label}` : info.label);
   setText('heroCurve', p.state === STATE.SENSOR ? '–' : fmtDeg(p.curve));
-  setText('heroThr', `เกณฑ์เตือน ${p.thr}°`);
+  setText('heroThr', `เกณฑ์เตือน ${effectiveThreshold(p)}°`);
   setText('heroHint', stale
     ? `ไม่ได้รับข้อมูลมา ${Math.round((performance.now() - app.lastAt) / 1000)} วินาที`
     : info.hint(p));
   $('alarmBand').hidden = !p.alarm || stale;
-  $('sensorNote').hidden = p.twoSensors;
+  $('sensorNote').hidden = p.twoSensors || p.state === STATE.SENSOR;
 };
 
 const renderPresent = (p, stale) => {
@@ -285,7 +287,7 @@ const renderPresent = (p, stale) => {
 const renderFigure = (p, stale) => {
   const known = !!p && p.state !== STATE.SENSOR;
   const tone = !p || stale ? 'idle' : stateInfo(p).tone;
-  const data = { upper: p?.upper ?? 0, lower: p?.lower ?? 0, tone, alarm: !!p?.alarm && !stale, known };
+  const data = { upper: p?.upper ?? 0, lower: p?.lower ?? 0, tone, alarm: !!p?.alarm && !stale, known, twoSensors: p?.twoSensors ?? true };
   if (app.view === 'live') figureLive.set(data);
   if (!$('present').hidden) figurePresent.set(data);
   if (wizard.open) {

@@ -60,7 +60,8 @@ const mockBluetooth = () => {
               stopTimer();
               state.timer = setInterval(notify, 200);
             };
-            status.readValue = async () => packet();
+            // เฟิร์มแวร์เรียก setValue ครั้งแรกตอนส่ง notify ค่าที่อ่านทันทีหลังเชื่อมต่อจึงเป็นค่าว่าง
+            status.readValue = async () => new DataView(new ArrayBuffer(0));
             return status;
           }
           const write = async data => {
@@ -347,7 +348,8 @@ try {
     const options = await page.evaluate(() => window.__ble.requestOptions);
     check('requestDevice ใช้ตัวกรองตามเอกสาร', options.filters[0].name === 'PostureAlert' && options.optionalServices[0] === '6e1f0001-5b8a-4c2b-9d3e-7a1c2f4e8b10');
     check('เชื่อมต่อแล้ว: ไม่มีป้ายข้อมูลจำลอง', !(await page.locator('#hero .demo-tag').isVisible()) && !(await page.locator('#scenarioRow').isVisible()));
-    check('แสดงค่าจาก packet จริง', (await text(page, '#heroCurve')) === '10.0°');
+    await page.waitForFunction(() => document.getElementById('heroCurve').textContent === '10.0°');
+    check('อ่านค่าแรกได้ค่าว่าง แล้วแสดงค่าจาก notify ถัดไป', true);
     await page.waitForTimeout(600);
     await shot(page, '18-ble-connected', { fullPage: true });
 
@@ -401,6 +403,15 @@ try {
     check('ล้างสถิติในอุปกรณ์แล้วประวัติรายวันไม่หาย', (await text(page, '#weekDetail')).includes('เตือน 6 ครั้ง'), await text(page, '#weekDetail'));
     check('เชื่อมต่อจริงมีปุ่มล้างประวัติ', await page.locator('#clearHistoryBtn').isVisible());
     await shot(page, '19-ble-stats', { fullPage: true });
+
+    // ใช้เซนเซอร์ตัวเดียว: เกณฑ์จริงสูงกว่าค่าที่ตั้ง 5° ตามเฟิร์มแวร์
+    await page.evaluate(() => { window.__ble.values.flags = 0b100; });
+    await page.click('[data-tab="live"]');
+    await page.waitForSelector('#sensorNote:not([hidden])');
+    check('เซนเซอร์ตัวเดียว: แจ้งผู้ใช้ และเกณฑ์เพิ่ม 5°', (await text(page, '#heroThr')) === `เกณฑ์เตือน ${Number(heldValue) + 5}°`, await text(page, '#heroThr'));
+    check('เซนเซอร์ตัวเดียว: ไม่แสดงค่าตัวล่าง', await page.evaluate(() => [...document.querySelectorAll('#figureLive .fig-label')].some(n => n.textContent === 'ล่าง –')));
+    await page.evaluate(() => { window.__ble.values.flags = 0b110; });
+    await page.waitForFunction(() => document.getElementById('sensorNote').hidden);
 
     // สั่นเตือน + การแจ้งเตือนบนมือถือ
     await page.evaluate(() => {

@@ -69,6 +69,8 @@ export class Simulator {
       case 'cal':
         this.offsetUpper = this.rawUpper;
         this.offsetLower = this.rawLower;
+        this.alarm = false;
+        this.overFor = 0;
         break;
       case 'snooze':
         this.snoozeLeft = this.snoozeLeft > 0 ? 0 : SNOOZE_SECONDS;
@@ -115,38 +117,32 @@ export class Simulator {
     this._updateState(pose, dt);
   }
 
+  // ลำดับและเงื่อนไขตรงกับ loop() ใน posture_v4.ino
   _updateState(pose, dt) {
-    const lying = Math.abs(this.upper) > LYING_ANGLE;
+    const lying = Math.abs(this.upper) > LYING_ANGLE || Math.abs(this.lower) > LYING_ANGLE;
+    // ระหว่างสั่น ต้องลดลงต่ำกว่าเกณฑ์ − 5° จึงจะหยุด
+    const slouching = this.curve > this.thr - (this.alarm ? HYSTERESIS : 0);
+
     let state;
     if (this.scenario === 'sensor') state = STATE.SENSOR;
-    else if (this.snoozeLeft > 0) state = STATE.SNOOZE;
     else if (lying) state = STATE.LYING;
+    else if (this.snoozeLeft > 0) state = STATE.SNOOZE;
+    else if (slouching) state = STATE.SLOUCH;
     else if (pose.moving) state = STATE.MOVING;
-    else if (this.alarm || this.curve > this.thr) state = STATE.SLOUCH;
     else state = STATE.OK;
 
     if (state === STATE.SLOUCH) {
+      this.slouch += dt;
       this.overFor += dt;
       if (!this.alarm && this.overFor >= this.delay) {
         this.alarm = true;
         this.alerts += 1;
       }
-      // เตือนค้างจนกว่าค่าจะต่ำกว่าเกณฑ์ − 5°
-      if (this.alarm && this.curve < this.thr - HYSTERESIS) {
-        this.alarm = false;
-        this.overFor = 0;
-        state = STATE.OK;
-      } else if (!this.alarm && this.curve <= this.thr) {
-        this.overFor = 0;
-        state = STATE.OK;
-      }
     } else {
+      if (state === STATE.OK) this.good += dt;
       this.alarm = false;
       this.overFor = 0;
     }
-
-    if (state === STATE.OK) this.good += dt;
-    if (state === STATE.SLOUCH) this.slouch += dt;
     this.state = state;
   }
 

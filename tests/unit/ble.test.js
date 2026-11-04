@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BleLink } from '../../js/ble.js';
+import { BleLink, commandGapMs } from '../../js/ble.js';
 import { COMMAND_UUID, DEVICE_NAME, SERVICE_UUID, STATUS_UUID } from '../../js/protocol.js';
 
 const wait = ms => new Promise(r => setTimeout(r, ms));
@@ -78,7 +78,7 @@ const makeDevice = () => {
   return device;
 };
 
-const setup = (device = makeDevice()) => {
+const setup = (device = makeDevice(), gap = () => 0) => {
   const statuses = [];
   const packets = [];
   let options = null;
@@ -88,6 +88,7 @@ const setup = (device = makeDevice()) => {
     onPacket: p => packets.push(p),
     backoff: [5, 5, 5],
     connectTimeout: 50,
+    commandGap: gap,
   });
   return { link, device, statuses, packets, options: () => options };
 };
@@ -222,6 +223,25 @@ test('คำสั่งถูกส่งเป็น UTF-8 ตามลำด�
   await link.connect();
   await Promise.all(['cal', 'thr=20', 'delay=5'].map(c => link.send(c)));
   assert.deepEqual(device.writes.map(w => w.text), ['cal', 'thr=20', 'delay=5']);
+});
+
+test('เว้นช่วงระหว่างคำสั่ง เพราะเฟิร์มแวร์ทิ้งคำสั่งที่มาตอนช่องไม่ว่าง', async () => {
+  const { link, device } = setup(makeDevice(), () => 60);
+  await link.connect();
+  await link.send('cal');
+  link.send('buzz');
+  await wait(20);
+  assert.deepEqual(device.writes.map(w => w.text), ['cal'], 'คำสั่งถัดไปต้องรอให้ครบช่วงพัก');
+  await until(() => device.writes.length === 2);
+  assert.deepEqual(device.writes.map(w => w.text), ['cal', 'buzz']);
+});
+
+test('ช่วงพักครอบคลุมเวลาที่เฟิร์มแวร์ค้างจริง', () => {
+  // cal: อ่านเซนเซอร์ 20 × 20 ms + สั่น 100+100+100 ms / buzz: 150+100+150 ms / snooze: สั่นสูงสุด 500 ms
+  assert.ok(commandGapMs('cal') > 700);
+  assert.ok(commandGapMs('buzz') > 400);
+  assert.ok(commandGapMs('snooze') > 500);
+  assert.ok(commandGapMs('thr=20') > 0);
 });
 
 test('คำสั่งที่ล้มเหลวไม่ทำให้คิวค้าง', async () => {

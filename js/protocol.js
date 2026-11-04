@@ -63,6 +63,16 @@ export const battPercent = mv => {
   return 100;
 };
 
+// ใช้เซนเซอร์ตัวเดียว (ตัวล่างหลุดหรือไม่ได้ต่อ) เฟิร์มแวร์ใช้ TILT_DEG แทน CURVE_DEG เกณฑ์จริงจึงสูงกว่าค่าที่ตั้ง 5°
+const SINGLE_SENSOR_EXTRA = 5;
+const ALARM_RELEASE_DEG = 5;
+
+/** เกณฑ์ที่อุปกรณ์ใช้ตัดสินจริง ซึ่งอาจต่างจากค่า thr ใน packet */
+export const effectiveThreshold = p => (p.twoSensors ? p.thr : p.thr + SINGLE_SENSOR_EXTRA);
+
+/** ค่าที่ต้องลดลงให้ต่ำกว่า อุปกรณ์จึงจะหยุดสั่น */
+export const releaseThreshold = p => effectiveThreshold(p) - ALARM_RELEASE_DEG;
+
 const inRange = (v, { min, max }) => Number.isInteger(v) && v >= min && v <= max;
 
 export const CMD = Object.freeze({

@@ -1,6 +1,17 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parse, encode, battPercent, CMD, STATE, PACKET_SIZE, SERVICE_UUID, STATUS_UUID, COMMAND_UUID } from '../../js/protocol.js';
+import { parse, encode, battPercent, effectiveThreshold, releaseThreshold, CMD, STATE, PACKET_SIZE, SERVICE_UUID, STATUS_UUID, COMMAND_UUID } from '../../js/protocol.js';
+
+test('เกณฑ์จริงตรงกับเฟิร์มแวร์: เซนเซอร์ตัวเดียวสูงกว่าค่าที่ตั้ง 5° และหยุดสั่นที่เกณฑ์ − 5°', () => {
+  assert.equal(effectiveThreshold({ thr: 15, twoSensors: true }), 15);
+  assert.equal(effectiveThreshold({ thr: 15, twoSensors: false }), 20);
+  assert.equal(releaseThreshold({ thr: 15, twoSensors: true }), 10);
+  assert.equal(releaseThreshold({ thr: 15, twoSensors: false }), 15);
+});
+
+test('ค่าว่างจากการอ่านครั้งแรก (เฟิร์มแวร์ยังไม่เคย setValue) ต้องไม่ทำให้แอปล้ม', () => {
+  assert.equal(parse(new DataView(new ArrayBuffer(0))), null);
+});
 
 // ประกอบ packet ด้วยมือทีละไบต์ตามตารางในเอกสาร ไม่ใช้ encode() เพื่อให้ตรวจ parse() ได้อย่างอิสระ
 const handmade = () => new DataView(new Uint8Array([

@@ -5,6 +5,12 @@ const BACKOFF_MS = [1000, 2000, 4000, 8000, 15000];
 const CONNECT_TIMEOUT_MS = 12000;
 const INITIAL_ATTEMPTS = 3;
 
+/**
+ * เวลาพักหลังส่งแต่ละคำสั่ง: เฟิร์มแวร์เก็บคำสั่งได้ทีละ 1 ช่อง ถ้าช่องยังไม่ว่าง คำสั่งใหม่จะถูกทิ้งเงียบ ๆ
+ * ทั้งที่การเขียนสำเร็จ และ cal / buzz / snooze ทำให้ loop() ค้างระหว่างสั่นหรืออ่านเซนเซอร์
+ */
+export const commandGapMs = text => ({ cal: 900, buzz: 500, snooze: 600 })[text] ?? 150;
+
 const withTimeout = (promise, ms) => new Promise((resolve, reject) => {
   const timer = setTimeout(() => {
     const err = new Error('connect timeout');
@@ -22,7 +28,8 @@ const withTimeout = (promise, ms) => new Promise((resolve, reject) => {
  * idle | connecting | connected | reconnecting (ส่ง { attempt } มาด้วย)
  */
 export class BleLink {
-  constructor({ bluetooth = globalThis.navigator?.bluetooth, onStatus = () => {}, onPacket = () => {}, backoff = BACKOFF_MS, connectTimeout = CONNECT_TIMEOUT_MS } = {}) {
+  constructor({ bluetooth = globalThis.navigator?.bluetooth, onStatus = () => {}, onPacket = () => {}, backoff = BACKOFF_MS, connectTimeout = CONNECT_TIMEOUT_MS, commandGap = commandGapMs } = {}) {
+    this.commandGap = commandGap;
     this.bluetooth = bluetooth;
     this.onStatus = onStatus;
     this.onPacket = onPacket;
@@ -206,7 +213,8 @@ export class BleLink {
       return char.writeValue(data);
     };
     const result = this.writeQueue.then(run, run);
-    this.writeQueue = result.catch(() => {});
+    const gap = this.commandGap(text);
+    this.writeQueue = result.catch(() => {}).then(() => new Promise(resolve => setTimeout(resolve, gap)));
     return result;
   }
 
