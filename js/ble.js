@@ -54,7 +54,8 @@ export class BleLink {
   /** เปิดหน้าต่างเลือกอุปกรณ์ ต้องเรียกจากการกดปุ่มของผู้ใช้ */
   async connect() {
     const device = await this.bluetooth.requestDevice({
-      filters: [{ name: DEVICE_NAME }],
+      // เฟิร์มแวร์ไม่ได้ใส่ชื่อในสัญญาณที่ประกาศเสมอไป (พบจากการสแกนเครื่องจริง) จึงต้องค้นหาด้วย UUID ของ service ด้วย
+      filters: [{ name: DEVICE_NAME }, { services: [SERVICE_UUID] }],
       optionalServices: [SERVICE_UUID],
     });
     if (this.device && this.device !== device) this.device.removeEventListener('gattserverdisconnected', this._onDisconnect);

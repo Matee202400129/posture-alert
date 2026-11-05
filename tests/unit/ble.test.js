@@ -93,10 +93,10 @@ const setup = (device = makeDevice(), gap = () => 0) => {
   return { link, device, statuses, packets, options: () => options };
 };
 
-test('เลือกอุปกรณ์ด้วยตัวกรองตามเอกสาร และขอ service ที่ถูกต้อง', async () => {
+test('ค้นหาได้ทั้งจากชื่อและ UUID เพราะเครื่องจริงอาจไม่ประกาศชื่อ', async () => {
   const { link, options, statuses, packets } = setup();
   await link.connect();
-  assert.deepEqual(options(), { filters: [{ name: DEVICE_NAME }], optionalServices: [SERVICE_UUID] });
+  assert.deepEqual(options(), { filters: [{ name: DEVICE_NAME }, { services: [SERVICE_UUID] }], optionalServices: [SERVICE_UUID] });
   assert.deepEqual(statuses, ['connecting', 'connected']);
   assert.equal(packets.length, 1, 'อ่านค่าแรกทันทีหลังเชื่อมต่อ');
   assert.equal(link.connected, true);

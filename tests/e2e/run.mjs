@@ -346,7 +346,7 @@ try {
     await page.waitForFunction(() => document.getElementById('linkChip').textContent === 'เชื่อมต่อแล้ว');
     check('เชื่อมต่อแล้ว: ซ่อนข้อผิดพลาด', !(await page.locator('#errorPanel').isVisible()));
     const options = await page.evaluate(() => window.__ble.requestOptions);
-    check('requestDevice ใช้ตัวกรองตามเอกสาร', options.filters[0].name === 'PostureAlert' && options.optionalServices[0] === '6e1f0001-5b8a-4c2b-9d3e-7a1c2f4e8b10');
+    check('requestDevice ค้นหาได้ทั้งจากชื่อและ UUID', options.filters[0].name === 'PostureAlert' && options.filters[1].services[0] === '6e1f0001-5b8a-4c2b-9d3e-7a1c2f4e8b10' && options.optionalServices[0] === '6e1f0001-5b8a-4c2b-9d3e-7a1c2f4e8b10');
     check('เชื่อมต่อแล้ว: ไม่มีป้ายข้อมูลจำลอง', !(await page.locator('#hero .demo-tag').isVisible()) && !(await page.locator('#scenarioRow').isVisible()));
     await page.waitForFunction(() => document.getElementById('heroCurve').textContent === '10.0°');
     check('อ่านค่าแรกได้ค่าว่าง แล้วแสดงค่าจาก notify ถัดไป', true);
