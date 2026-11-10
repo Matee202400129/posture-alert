@@ -173,7 +173,7 @@ ul { list-style: none; }
   border-bottom: 0.5px solid var(--border);
 }
 .brand { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 1.0625rem; margin-right: auto; min-width: 0; }
-.brand-mark { width: 24px; height: 24px; flex: none; fill: none; stroke: var(--accent); stroke-linecap: round; }
+.brand-mark { width: 28px; height: 28px; flex: none; border-radius: 7px; margin-right: 2px; box-shadow: 0 0 0 1px var(--border), 0 1px 3px rgba(0, 0, 0, 0.18); }
 
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
