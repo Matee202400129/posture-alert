@@ -1,6 +1,6 @@
 // Service worker: เก็บไฟล์ทั้งหมดไว้ตอนติดตั้ง เพื่อให้เปิดแอปได้แม้ไม่มีเน็ต
 // ใช้เน็ตก่อนถ้ามี (เวอร์ชันใหม่ขึ้นทันทีหลัง deploy) ถ้าเน็ตช้าหรือไม่มีจะใช้ไฟล์ที่เก็บไว้
-const CACHE = 'posture-alert-v4';
+const CACHE = 'posture-alert-v5';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const FILES = [

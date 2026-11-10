@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ไอคอนสีเดียวสำหรับธีมไอคอนของ Android 13 ขึ้นไป -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:pathData="M34.91,73.09 A27,27 0 1,1 73.09,73.09" android:strokeColor="#55FFFFFF" android:strokeWidth="7" android:strokeLineCap="round" />
+    <path android:pathData="M34.91,73.09 A27,27 0 0,1 70.55,32.66" android:strokeColor="#FFFFFFFF" android:strokeWidth="7" android:strokeLineCap="round" />
+    <path android:pathData="M48,70V40h7.5a8.5,8.5 0 0,1 0,17H48" android:strokeColor="#FFFFFFFF" android:strokeWidth="6.5" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M42.3,40a5.7,5.7 0 1,0 11.4,0a5.7,5.7 0 1,0 -11.4,0" android:fillColor="#FFFFFFFF" />
+</vector>
