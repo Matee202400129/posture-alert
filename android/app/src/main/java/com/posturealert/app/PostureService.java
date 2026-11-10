@@ -458,6 +458,7 @@ public class PostureService extends Service {
     }
 
     private void alert(Packet p) {
+        Log.i(TAG, "alarm started: curve " + p.curve + ", notify " + prefs.getBoolean(PREF_NOTIFY, true) + ", vibrate " + prefs.getBoolean(PREF_VIBRATE, true));
         String text = String.format(Locale.US, "ยืดหลังให้ตรงขึ้น ตอนนี้โค้ง %.0f° (เกณฑ์ %d°)", p.curve, p.effectiveThreshold());
         if (prefs.getBoolean(PREF_NOTIFY, true)) {
             Notification n = new Notification.Builder(this, CHANNEL_ALERT)
@@ -474,6 +475,7 @@ public class PostureService extends Service {
     }
 
     private void cancelAlert() {
+        if (prevAlarm) Log.i(TAG, "alarm stopped");
         notes.cancel(NOTE_ALERT);
     }
 

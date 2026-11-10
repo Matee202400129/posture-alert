@@ -3,6 +3,8 @@ package com.posturealert.app;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -34,6 +36,7 @@ public class MainActivity extends Activity implements PostureService.Listener {
     private static final String HOST = "appassets.androidplatform.net";
     private static final String START_URL = "https://" + HOST + "/index.html";
     private static final int REQ_PERMISSIONS = 1;
+    private static final int REQ_ENABLE_BT = 2;
 
     private WebView web;
     private boolean connectAfterPermissions;
@@ -188,7 +191,33 @@ public class MainActivity extends Activity implements PostureService.Listener {
         else onError("PermissionError", "bluetooth permission denied");
     }
 
+    /** Bluetooth off: ask Android to show its own "turn on Bluetooth?" dialog instead of sending the user to settings. */
+    @SuppressLint("MissingPermission") // only called once the Bluetooth permissions are granted
+    @SuppressWarnings("deprecation")
     private void startService() {
+        BluetoothManager manager = getSystemService(BluetoothManager.class);
+        BluetoothAdapter adapter = manager != null ? manager.getAdapter() : null;
+        if (adapter != null && !adapter.isEnabled()) {
+            try {
+                startActivityForResult(new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE), REQ_ENABLE_BT);
+                return;
+            } catch (Exception e) {
+                // fall through: the service reports BluetoothOff
+            }
+        }
+        startServiceNow();
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQ_ENABLE_BT) return;
+        if (resultCode == RESULT_OK) startServiceNow();
+        else onError("BluetoothOff", "user kept bluetooth off");
+    }
+
+    private void startServiceNow() {
         Intent intent = new Intent(this, PostureService.class).setAction(PostureService.ACTION_CONNECT);
         startForegroundService(intent);
     }
