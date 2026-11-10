@@ -70,7 +70,7 @@
     .qr { margin: 0; display: grid; justify-items: center; gap: 8px; }
     .qr img { width: min(240px, 70vw); height: auto; padding: 10px; background: #fff; border-radius: 20px; box-shadow: var(--shadow); }
     .qr figcaption { color: var(--muted); font-size: 0.875rem; text-align: center; }
-    .card:not([data-mine]) .qr { display: none; }
+    .scan { outline: 2px solid var(--accent); outline-offset: -2px; }
     footer { text-align: center; color: var(--muted); font-size: 0.8125rem; padding-top: 4px; }
   </style>
 </head>
@@ -81,6 +81,17 @@
       <h1>PostureAlert</h1>
       <p>อุปกรณ์แจ้งเตือนหลังค่อม</p>
     </header>
+
+    <section id="scan" class="card scan" aria-labelledby="h-scan" hidden>
+      <div class="card-head">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+        <h2 id="h-scan">ติดตั้งบนมือถือ</h2>
+      </div>
+      <figure class="qr">
+        <img src="download/qr-install.svg" alt="คิวอาร์โค้ดสำหรับเปิดหน้าติดตั้งนี้บนมือถือ" width="240" height="240">
+        <figcaption>เปิดกล้องมือถือแล้วสแกน จะได้หน้านี้บนมือถือ แล้วกดติดตั้งได้เลย<br>ใช้ได้ทั้ง Android และ iPhone</figcaption>
+      </figure>
+    </section>
 
     <section id="android" class="card" aria-labelledby="h-android">
       <div class="card-head">
@@ -120,24 +131,24 @@
     <section id="desktop" class="card" aria-labelledby="h-desktop">
       <div class="card-head">
         <svg aria-hidden="true" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        <h2 id="h-desktop">คอมพิวเตอร์</h2>
+        <h2 id="h-desktop">ใช้บนคอมพิวเตอร์</h2>
         <span class="tag">เครื่องนี้</span>
       </div>
-      <figure class="qr">
-        <img src="download/qr-install.svg" alt="คิวอาร์โค้ดสำหรับเปิดหน้าติดตั้งนี้บนมือถือ" width="240" height="240">
-        <figcaption>สแกนด้วยกล้องมือถือ เพื่อเปิดหน้านี้บนมือถือแล้วติดตั้ง</figcaption>
-      </figure>
       <a class="btn btn-soft" href="./">เปิดเว็บแอปใน Chrome หรือ Edge</a>
     </section>
 
     <footer><a href="./">ลองเปิดเว็บแอปแบบข้อมูลจำลอง</a></footer>
   </main>
   <script>
-    // ยกการ์ดของเครื่องที่เปิดอยู่ขึ้นไปไว้บนสุด
+    // เปิดจากมือถือ: ยกการ์ดของมือถือนั้นขึ้นบนสุด / เปิดจากคอม: แสดงคิวอาร์ให้มือถือสแกน
     (function () {
       var ua = navigator.userAgent || '';
       var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var id = /Android/i.test(ua) ? 'android' : ios ? 'ios' : 'desktop';
+      if (id === 'desktop') {
+        document.getElementById('scan').hidden = false;
+        return;
+      }
       var card = document.getElementById(id);
       card.setAttribute('data-mine', '');
       document.querySelector('header').after(card);
