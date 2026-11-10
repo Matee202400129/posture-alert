@@ -1,6 +1,6 @@
 // Service worker: เก็บไฟล์ทั้งหมดไว้ตอนติดตั้ง เพื่อให้เปิดแอปได้แม้ไม่มีเน็ต
 // ใช้เน็ตก่อนถ้ามี (เวอร์ชันใหม่ขึ้นทันทีหลัง deploy) ถ้าเน็ตช้าหรือไม่มีจะใช้ไฟล์ที่เก็บไว้
-const CACHE = 'posture-alert-v5';
+const CACHE = 'posture-alert-v6';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const FILES = [
@@ -60,6 +60,8 @@ const fromCache = async request => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
+  // ไฟล์ติดตั้งแอปต้องได้ตัวล่าสุดจากเน็ตเสมอ ไม่เก็บในแคช
+  if (new URL(request.url).pathname.includes('/download/')) return;
 
   event.respondWith((async () => {
     const network = fetch(request).then(async response => {
