@@ -4,6 +4,7 @@
     <!-- Android 11 ลงไป: สแกน Bluetooth ต้องใช้สิทธิ์ตำแหน่ง -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" android:maxSdkVersion="30" />
     <!-- Android 12 ขึ้นไป: สิทธิ์ "อุปกรณ์ที่อยู่ใกล้เคียง" ไม่ใช้หาตำแหน่ง -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />

@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -108,7 +109,7 @@ public class MainActivity extends Activity implements PostureService.Listener {
     }
 
     private static String mimeType(String path) {
-        String p = path.toLowerCase();
+        String p = path.toLowerCase(Locale.ROOT);
         if (p.endsWith(".html")) return "text/html";
         if (p.endsWith(".js") || p.endsWith(".mjs")) return "text/javascript";
         if (p.endsWith(".css")) return "text/css";
