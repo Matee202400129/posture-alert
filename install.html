@@ -67,6 +67,10 @@
     li::marker { color: var(--muted); font-weight: 600; }
     .note { margin: 0; color: var(--muted); font-size: 0.875rem; line-height: 1.55; }
     a { color: var(--accent); }
+    .qr { margin: 0; display: grid; justify-items: center; gap: 8px; }
+    .qr img { width: min(240px, 70vw); height: auto; padding: 10px; background: #fff; border-radius: 20px; box-shadow: var(--shadow); }
+    .qr figcaption { color: var(--muted); font-size: 0.875rem; text-align: center; }
+    .card:not([data-mine]) .qr { display: none; }
     footer { text-align: center; color: var(--muted); font-size: 0.8125rem; padding-top: 4px; }
   </style>
 </head>
@@ -119,6 +123,10 @@
         <h2 id="h-desktop">คอมพิวเตอร์</h2>
         <span class="tag">เครื่องนี้</span>
       </div>
+      <figure class="qr">
+        <img src="download/qr-install.svg" alt="คิวอาร์โค้ดสำหรับเปิดหน้าติดตั้งนี้บนมือถือ" width="240" height="240">
+        <figcaption>สแกนด้วยกล้องมือถือ เพื่อเปิดหน้านี้บนมือถือแล้วติดตั้ง</figcaption>
+      </figure>
       <a class="btn btn-soft" href="./">เปิดเว็บแอปใน Chrome หรือ Edge</a>
     </section>
 
