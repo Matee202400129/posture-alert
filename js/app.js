@@ -1,6 +1,7 @@
 // ตัวควบคุมหน้าเว็บ: รับ packet จากอุปกรณ์จริงหรือตัวจำลอง แล้วอัปเดตทุกหน้าจอจากข้อมูลชุดเดียวกัน
 import { parse, battPercent, effectiveThreshold, releaseThreshold, STATE, CMD } from './protocol.js';
 import { BleLink, BLUETOOTH_OFF, bleErrorMessage, checkSupport } from './ble.js';
+import { WIFI_ERROR, WifiLink, isDeviceHosted } from './wifi.js';
 import { Simulator } from './simulator.js';
 import { HistoryStore, demoDays } from './history.js';
 import { createBackFigure } from './figure.js';
@@ -32,7 +33,7 @@ const STATE_INFO = {
 const UNKNOWN_STATE = { label: 'ไม่ทราบสถานะ', tone: 'idle', icon: 'i-warn', hint: () => 'เฟิร์มแวร์ส่งสถานะที่แอปไม่รู้จัก' };
 
 const LINK_TEXT = {
-  demo: { chip: 'ข้อมูลจำลอง', title: 'โหมดตัวอย่าง: ข้อมูลจำลอง', desc: 'ตัวเลขทั้งหมดไม่ได้มาจากอุปกรณ์จริง กดเชื่อมต่อเมื่อพร้อม', btn: 'เชื่อมต่ออุปกรณ์' },
+  demo: { chip: 'ข้อมูลจำลอง', title: 'โหมดตัวอย่าง', desc: 'ตัวเลขเป็นข้อมูลจำลอง ไม่ได้มาจากอุปกรณ์จริง', btn: 'เชื่อมต่ออุปกรณ์' },
   connecting: { chip: 'กำลังเชื่อมต่อ', title: 'กำลังเชื่อมต่อ…', desc: 'เลือก PostureAlert ในหน้าต่างของเบราว์เซอร์', btn: 'กำลังเชื่อมต่อ…' },
   connected: { chip: 'เชื่อมต่อแล้ว', title: 'เชื่อมต่อ PostureAlert แล้ว', desc: 'กำลังแสดงข้อมูลจริงจากอุปกรณ์', btn: 'ตัดการเชื่อมต่อ' },
   reconnecting: { chip: 'สัญญาณหลุด', title: 'สัญญาณหลุด กำลังเชื่อมต่อใหม่', desc: '', btn: 'หยุดเชื่อมต่อ' },
@@ -73,7 +74,9 @@ const figureW2 = createBackFigure($('wizardFigure2'));
 const figureW3 = createBackFigure($('wizardFigure3'));
 const chart = new LiveChart($('liveChart'));
 
-const link = new BleLink({
+// หน้าเว็บที่โหลดจากตัวบอร์ดคุยผ่าน Wi-Fi ส่วนที่อื่นใช้ Bluetooth (ค่า mode 'ble' หมายถึงข้อมูลจริงจากอุปกรณ์ทั้งสองแบบ)
+const overWifi = isDeviceHosted();
+const linkHandlers = {
   onStatus(status, info) {
     handleLinkStatus(status, info);
   },
@@ -81,7 +84,8 @@ const link = new BleLink({
     if (app.mode !== 'ble') enterBleMode();
     handlePacket(dv);
   },
-});
+};
+const link = overWifi ? new WifiLink(linkHandlers) : new BleLink(linkHandlers);
 
 // ---------- โหมดตัวอย่าง ----------
 let demoTimer = null;
@@ -157,7 +161,7 @@ const isBluetoothOff = async () => {
 
 const connectDevice = async () => {
   hideError();
-  const problem = checkSupport();
+  const problem = overWifi ? null : checkSupport();
   if (problem) {
     showError(problem);
     return;
@@ -170,6 +174,10 @@ const connectDevice = async () => {
   } catch (err) {
     app.link = 'demo';
     renderLink();
+    if (overWifi) {
+      showError(WIFI_ERROR);
+      return;
+    }
     const message = bleErrorMessage(err);
     if (message) showError(err.name === 'NotFoundError' && await isBluetoothOff() ? BLUETOOTH_OFF : message);
   }
@@ -202,9 +210,14 @@ const renderLink = () => {
   const bar = $('linkBar');
   bar.dataset.link = key;
   $('linkTitle').textContent = info.title;
-  $('linkDesc').textContent = key === 'reconnecting'
-    ? `ลองครั้งที่ ${app.attempt} ค่าบนจอคือค่าล่าสุดก่อนหลุด ถ้าเครื่องปิดอยู่ให้กดปุ่มบนเครื่อง`
-    : info.desc;
+  if (key === 'reconnecting') {
+    const hint = overWifi ? 'ตรวจว่ามือถือยังต่อ Wi-Fi ชื่อ PostureAlert' : 'ถ้าเครื่องปิดอยู่ให้กดปุ่มบนเครื่อง';
+    $('linkDesc').textContent = `ลองครั้งที่ ${app.attempt} ค่าบนจอคือค่าล่าสุดก่อนหลุด ${hint}`;
+  } else if (key === 'connecting' && overWifi) {
+    $('linkDesc').textContent = 'กำลังอ่านข้อมูลจากอุปกรณ์ผ่าน Wi-Fi';
+  } else {
+    $('linkDesc').textContent = info.desc;
+  }
   $('linkBtnText').textContent = info.btn;
   const btn = $('linkBtn');
   btn.disabled = key === 'connecting';
@@ -249,6 +262,16 @@ const render = () => {
   if (app.view === 'live') renderChart();
 };
 
+// วงแหวนบนหน้าหลักยาว 75 ส่วนจาก 100 (270°) สเกล 0–45° ค่าติดลบ (เอนไปหลัง) แสดงเป็น 0
+const GAUGE_MAX = 45;
+const gaugeRatio = deg => Math.min(1, Math.max(0, deg / GAUGE_MAX));
+const setGauge = (value, thr) => {
+  $('gaugeValue').setAttribute('stroke-dasharray', `${(75 * gaugeRatio(value)).toFixed(2)} 100`);
+  const tick = $('gaugeThr');
+  tick.setAttribute('visibility', thr == null ? 'hidden' : 'visible');
+  if (thr != null) tick.setAttribute('transform', `rotate(${(135 + 270 * gaugeRatio(thr)).toFixed(1)} 100 100)`);
+};
+
 const renderHero = (p, stale) => {
   const hero = $('hero');
   if (!p) {
@@ -258,9 +281,11 @@ const renderHero = (p, stale) => {
     setText('heroThr', 'เกณฑ์เตือน –');
     setText('heroHint', '');
     $('alarmBand').hidden = true;
+    setGauge(0, null);
     return;
   }
   const info = stateInfo(p);
+  setGauge(p.state === STATE.SENSOR ? 0 : p.curve, effectiveThreshold(p));
   hero.dataset.tone = stale ? 'idle' : info.tone;
   hero.classList.toggle('is-stale', stale);
   $('heroIcon').setAttribute('href', `#${info.icon}`);
@@ -783,3 +808,5 @@ startDemo();
 showView();
 renderNotifySettings();
 if (prefs.get('wizardSeen', '0') !== '1') openWizard();
+// เปิดหน้าเว็บจากตัวบอร์ดได้แปลว่าต่อ Wi-Fi อยู่แล้ว จึงเริ่มอ่านข้อมูลเลย
+if (overWifi) connectDevice();

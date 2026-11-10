@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>PostureAlert</title>
   <meta name="description" content="เว็บแอปเชื่อมอุปกรณ์แจ้งเตือนหลังค่อม PostureAlert ผ่าน Bluetooth">
-  <meta name="theme-color" content="#F3F5F4">
+  <meta name="theme-color" content="#F2F2F7">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -91,19 +91,51 @@
                 <svg class="icon" aria-hidden="true"><use href="#i-vibrate"/></svg>
                 <span>อุปกรณ์กำลังสั่นเตือน</span>
               </div>
-              <div class="hero-head">
-                <svg class="icon icon-lg" aria-hidden="true"><use id="heroIcon" href="#i-ok"/></svg>
-                <span id="heroState" class="hero-state" role="status">กำลังรอข้อมูล</span>
-                <span class="demo-tag" data-demo-only>ข้อมูลจำลอง</span>
+              <div class="hero-top" data-demo-only><span class="demo-tag">ข้อมูลจำลอง</span></div>
+              <div class="gauge">
+                <!-- วงแหวน 270° ขีดดำคือเกณฑ์เตือน ส่วนที่เติมสีคือค่าความโค้งตอนนี้ (สเกล 0–45°) -->
+                <svg class="gauge-svg" viewBox="0 0 200 200" aria-hidden="true">
+                  <circle class="gauge-track" cx="100" cy="100" r="86" pathLength="100" stroke-dasharray="75 100" transform="rotate(135 100 100)"/>
+                  <circle id="gaugeValue" class="gauge-value" cx="100" cy="100" r="86" pathLength="100" stroke-dasharray="0 100" transform="rotate(135 100 100)"/>
+                  <line id="gaugeThr" class="gauge-thr" x1="172" y1="100" x2="198" y2="100" visibility="hidden"/>
+                </svg>
+                <div class="gauge-center">
+                  <span class="hero-head">
+                    <svg class="icon" aria-hidden="true"><use id="heroIcon" href="#i-ok"/></svg>
+                    <span id="heroState" class="hero-state" role="status">กำลังรอข้อมูล</span>
+                  </span>
+                  <span id="heroCurve" class="hero-curve">–</span>
+                  <span class="hero-unit">ความโค้งหลัง</span>
+                </div>
               </div>
-              <div class="hero-value">
-                <span id="heroCurve" class="hero-curve">–</span>
-                <span class="hero-unit">ความโค้งหลัง<br><span id="heroThr">เกณฑ์เตือน –</span></span>
-              </div>
+              <span id="heroThr" class="hero-thr">เกณฑ์เตือน –</span>
               <p id="heroHint" class="hero-hint"></p>
             </article>
 
-            <div id="scenarioRow" class="scenario">
+            <section class="quick-wrap" aria-labelledby="h-controls">
+              <h2 id="h-controls" class="group-label">ควบคุมอุปกรณ์</h2>
+              <div class="quick">
+                <button class="btn-quick" type="button" data-control data-action="cal">
+                  <span class="quick-icon"><svg class="icon" aria-hidden="true"><use href="#i-save"/></svg></span>
+                  <span>บันทึกท่าตรง</span>
+                </button>
+                <button id="snoozeBtn" class="btn-quick" type="button" data-control data-action="snooze" aria-pressed="false">
+                  <span class="quick-icon"><svg class="icon" aria-hidden="true"><use href="#i-snooze"/></svg></span>
+                  <span id="snoozeText">พักเตือน 30 นาที</span>
+                </button>
+                <button class="btn-quick" type="button" data-control data-action="buzz">
+                  <span class="quick-icon"><svg class="icon" aria-hidden="true"><use href="#i-vibrate"/></svg></span>
+                  <span>ทดสอบสั่น</span>
+                </button>
+                <button class="btn-quick" type="button" data-control data-action="reset">
+                  <span class="quick-icon"><svg class="icon" aria-hidden="true"><use href="#i-reset"/></svg></span>
+                  <span>ล้างสถิติ</span>
+                </button>
+              </div>
+              <p class="note quick-note">นั่งหลังตรงก่อนกด "บันทึกท่าตรง" อุปกรณ์จะใช้ท่าตอนนั้นเป็นค่าศูนย์</p>
+            </section>
+
+            <div id="scenarioRow" class="scenario card">
               <label for="scenario">สถานการณ์จำลอง</label>
               <select id="scenario" class="select">
                 <option value="auto">อัตโนมัติ (สลับท่าไปเรื่อย ๆ)</option>
@@ -114,19 +146,13 @@
                 <option value="sensor">เซนเซอร์มีปัญหา</option>
               </select>
             </div>
-
-            <article class="card">
-              <h2>ท่านั่งจากด้านข้าง</h2>
-              <div id="figureLive" class="figure-box"></div>
-              <p id="sensorNote" class="note" hidden>ตอนนี้อุปกรณ์ใช้เซนเซอร์ตัวเดียว ตัวเลขคือมุมเอียงของตัวบน และเกณฑ์เตือนสูงกว่าค่าที่ตั้งไว้ 5° ถ้าติดไว้ 2 ตัวให้ตรวจสายตัวล่าง</p>
-            </article>
           </div>
 
           <div class="live-col">
             <article class="card">
               <div class="card-head">
-                <h2>ความโค้งหลัง 60 วินาทีล่าสุด</h2>
-                <span class="demo-tag demo-tag-soft" data-demo-only>ข้อมูลจำลอง</span>
+                <h2>60 วินาทีล่าสุด</h2>
+                <span class="demo-tag" data-demo-only>ข้อมูลจำลอง</span>
               </div>
               <canvas id="liveChart" class="live-chart" role="img" aria-label="กราฟความโค้งหลัง 60 วินาทีล่าสุด"></canvas>
               <dl class="mini-stats">
@@ -136,31 +162,15 @@
             </article>
 
             <article class="card">
-              <h2>ควบคุมอุปกรณ์</h2>
-              <div class="controls">
-                <button class="btn btn-control" type="button" data-control data-action="cal">
-                  <svg class="icon" aria-hidden="true"><use href="#i-save"/></svg>
-                  <span>บันทึกท่าตรง</span>
-                </button>
-                <button id="snoozeBtn" class="btn btn-control" type="button" data-control data-action="snooze" aria-pressed="false">
-                  <svg class="icon" aria-hidden="true"><use href="#i-snooze"/></svg>
-                  <span id="snoozeText">พักเตือน 30 นาที</span>
-                </button>
-                <button class="btn btn-control" type="button" data-control data-action="buzz">
-                  <svg class="icon" aria-hidden="true"><use href="#i-vibrate"/></svg>
-                  <span>ทดสอบสั่น</span>
-                </button>
-                <button class="btn btn-control" type="button" data-control data-action="reset">
-                  <svg class="icon" aria-hidden="true"><use href="#i-reset"/></svg>
-                  <span>ล้างสถิติ</span>
-                </button>
-              </div>
-              <p class="note">นั่งหลังตรงก่อนกด "บันทึกท่าตรง" เพราะอุปกรณ์จะใช้ท่าตอนนั้นเป็นค่าศูนย์</p>
-              <button class="btn btn-danger btn-block" type="button" data-control data-action="off">
-                <svg class="icon" aria-hidden="true"><use href="#i-power"/></svg>
-                <span>ปิดเครื่อง</span>
-              </button>
+              <h2>ท่านั่งจากด้านข้าง</h2>
+              <div id="figureLive" class="figure-box"></div>
+              <p id="sensorNote" class="note" hidden>ตอนนี้อุปกรณ์ใช้เซนเซอร์ตัวเดียว ตัวเลขคือมุมเอียงของตัวบน และเกณฑ์เตือนสูงกว่าค่าที่ตั้งไว้ 5° ถ้าติดไว้ 2 ตัวให้ตรวจสายตัวล่าง</p>
             </article>
+
+            <button class="btn btn-danger btn-block" type="button" data-control data-action="off">
+              <svg class="icon" aria-hidden="true"><use href="#i-power"/></svg>
+              <span>ปิดเครื่อง</span>
+            </button>
           </div>
         </div>
       </section>
@@ -298,12 +308,13 @@
         </article>
 
         <article class="card">
-          <h2>ใช้กับเบราว์เซอร์ไหนได้บ้าง</h2>
+          <h2>เชื่อมต่อผ่าน Bluetooth</h2>
           <ul class="plain-list">
-            <li><strong>Android, Windows, macOS:</strong> ใช้ Chrome หรือ Edge</li>
             <li><strong>iPhone และ iPad:</strong> ต้องใช้แอปเบราว์เซอร์ <strong>Bluefy</strong> จาก App Store เพราะ Safari ไม่รองรับ Web Bluetooth</li>
+            <li><strong>Android, Windows, macOS:</strong> ใช้ Chrome หรือ Edge</li>
             <li>ต้องเปิดเว็บผ่าน HTTPS เท่านั้น</li>
           </ul>
+          <p class="note"><strong>หาอุปกรณ์ไม่เจอ:</strong> อุปกรณ์เชื่อมได้ทีละเครื่อง ให้ปิดแท็บหรือเครื่องอื่นที่เชื่อมอยู่ก่อน ถ้ายังไม่เจอให้ปิดแล้วเปิดเครื่องใหม่ และเช็กว่าเสาอากาศเล็กบนบอร์ดยังเสียบอยู่</p>
         </article>
 
         <article class="card">

@@ -501,6 +501,61 @@ try {
     await context.close();
   }
 
+  // ---------- หน้าเว็บที่โหลดจากบอร์ด (Wi-Fi) ----------
+  {
+    // หน้าเว็บบนบอร์ดเป็น HTTP จึงไม่มี service worker ต้องปิดให้ตรงกับของจริง
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, hasTouch: true, serviceWorkers: 'block' });
+    const page = await context.newPage();
+    page.on('pageerror', e => consoleErrors.push(`pageerror: ${e.message}`));
+    await page.addInitScript(() => localStorage.setItem('pa.wizardSeen', '1'));
+    const device = { commands: [], online: true, thr: 15 };
+    const packet = () => {
+      const b = new DataView(new ArrayBuffer(20));
+      b.setUint8(0, 1); b.setUint8(1, 0b111);
+      b.setInt16(2, 220, true); b.setInt16(4, 20, true); b.setInt16(6, 200, true);
+      b.setUint16(8, 3900, true); b.setUint16(10, 100, true); b.setUint16(12, 25, true); b.setUint16(14, 2, true);
+      b.setUint8(16, device.thr); b.setUint8(17, 3);
+      return Buffer.from(b.buffer);
+    };
+    // จำลองสิ่งที่บอร์ดทำ: ใส่ meta ลงในหน้าเว็บ และตอบ /status กับ /cmd
+    await page.route(`${BASE}`, async route => {
+      const response = await route.fetch();
+      const html = (await response.text()).replace('<head>', '<head><meta name="pa-device-hosted" content="1">');
+      await route.fulfill({ response, body: html });
+    });
+    await page.route(`${BASE}status`, route => (device.online
+      ? route.fulfill({ status: 200, contentType: 'application/octet-stream', body: packet() })
+      : route.abort()));
+    await page.route(`${BASE}cmd*`, route => {
+      const text = new URL(route.request().url()).searchParams.get('c');
+      device.commands.push(text);
+      const m = /^thr=(\d+)$/.exec(text);
+      if (m) device.thr = Number(m[1]);
+      return route.fulfill({ status: 200, body: 'ok' });
+    });
+    await page.goto(BASE);
+    await page.waitForFunction(() => document.body.dataset.mode === 'ble');
+    await page.waitForFunction(() => document.getElementById('linkChip').textContent === 'เชื่อมต่อแล้ว');
+    check('Wi-Fi: เปิดหน้าเว็บแล้วเชื่อมต่อเองโดยไม่ต้องกด', (await text(page, '#heroCurve')) === '20.0°');
+    check('Wi-Fi: แสดงสถานะจาก packet และไม่มีป้ายข้อมูลจำลอง', (await text(page, '#heroState')) === 'หลังค่อม' && !(await page.locator('#hero .demo-tag').isVisible()));
+    await page.click('[data-action="cal"]');
+    await page.waitForFunction(() => document.getElementById('toast').textContent.includes('บันทึกท่าตรงแล้ว'));
+    check('Wi-Fi: ส่งคำสั่ง cal ถึงอุปกรณ์', device.commands.join() === 'cal', device.commands.join());
+    await page.click('[data-tab="settings"]');
+    await page.locator('#thrSlider').fill('22');
+    await page.waitForFunction(() => document.getElementById('thrReply').dataset.state === 'ok', null, { timeout: 8000 });
+    check('Wi-Fi: เปลี่ยนเกณฑ์แล้วอุปกรณ์ตอบกลับตรงกัน', (await text(page, '#thrReply')).includes('22°') && device.commands.includes('thr=22'));
+    await page.click('[data-tab="live"]');
+    device.online = false;
+    await page.waitForFunction(() => document.getElementById('linkChip').textContent === 'สัญญาณหลุด', null, { timeout: 8000 });
+    check('Wi-Fi หลุด: แจ้งสถานะ ไม่สลับเป็นข้อมูลจำลอง และเตือนให้ตรวจ Wi-Fi', (await page.getAttribute('body', 'data-mode')) === 'ble' && (await text(page, '#linkDesc')).includes('Wi-Fi'));
+    await shot(page, '21-wifi-lost');
+    device.online = true;
+    await page.waitForFunction(() => document.getElementById('linkChip').textContent === 'เชื่อมต่อแล้ว', null, { timeout: 8000 });
+    check('Wi-Fi กลับมา: อ่านต่อเอง', true);
+    await context.close();
+  }
+
   // ---------- เบราว์เซอร์ไม่รองรับ ----------
   {
     const { page, context } = await newPage({ bluetooth: false });

@@ -260,7 +260,7 @@ test('ไฟล์ทุกตัวที่ service worker เก็บไว�
     if (f === './') continue;
     assert.ok((await stat(new URL(f, root))).isFile(), f);
   }
-  for (const module of ['app', 'ble', 'charts', 'figure', 'history', 'protocol', 'simulator', 'util']) {
+  for (const module of ['app', 'ble', 'charts', 'figure', 'history', 'protocol', 'simulator', 'util', 'wifi']) {
     assert.ok(files.includes(`js/${module}.js`), `sw.js ต้องมี js/${module}.js`);
   }
   const css = await readFile(new URL('css/style.css', root), 'utf8');
