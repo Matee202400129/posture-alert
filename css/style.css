@@ -217,6 +217,7 @@ ul { list-style: none; }
   background: var(--demo-bg); color: var(--demo-text); font-size: 0.75rem; font-weight: 600; line-height: 1.6;
 }
 body:not([data-mode="demo"]) [data-demo-only] { display: none !important; }
+body[data-native] [data-web-only], body:not([data-native]) [data-native-only] { display: none !important; }
 
 /* แถบการเชื่อมต่อ */
 .linkbar {

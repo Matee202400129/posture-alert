@@ -2,6 +2,7 @@
 import { parse, battPercent, effectiveThreshold, releaseThreshold, STATE, CMD } from './protocol.js';
 import { BleLink, BLUETOOTH_OFF, bleErrorMessage, checkSupport } from './ble.js';
 import { WIFI_ERROR, WifiLink, isDeviceHosted } from './wifi.js';
+import { NativeLink, isNativeApp, nativeErrorMessage } from './native.js';
 import { Simulator } from './simulator.js';
 import { HistoryStore, demoDays } from './history.js';
 import { createBackFigure } from './figure.js';
@@ -76,6 +77,9 @@ const chart = new LiveChart($('liveChart'));
 
 // หน้าเว็บที่โหลดจากตัวบอร์ดคุยผ่าน Wi-Fi ส่วนที่อื่นใช้ Bluetooth (ค่า mode 'ble' หมายถึงข้อมูลจริงจากอุปกรณ์ทั้งสองแบบ)
 const overWifi = isDeviceHosted();
+// ในแอป Android บริการเบื้องหลังของแอปถือการเชื่อมต่อไว้ จึงเตือนได้แม้ปิดจอ
+const native = isNativeApp();
+if (native) document.body.dataset.native = '';
 const linkHandlers = {
   onStatus(status, info) {
     handleLinkStatus(status, info);
@@ -85,7 +89,7 @@ const linkHandlers = {
     handlePacket(dv);
   },
 };
-const link = overWifi ? new WifiLink(linkHandlers) : new BleLink(linkHandlers);
+const link = native ? new NativeLink(linkHandlers) : overWifi ? new WifiLink(linkHandlers) : new BleLink(linkHandlers);
 
 // ---------- โหมดตัวอย่าง ----------
 let demoTimer = null;
@@ -161,7 +165,7 @@ const isBluetoothOff = async () => {
 
 const connectDevice = async () => {
   hideError();
-  const problem = overWifi ? null : checkSupport();
+  const problem = overWifi || native ? null : checkSupport();
   if (problem) {
     showError(problem);
     return;
@@ -178,7 +182,7 @@ const connectDevice = async () => {
       showError(WIFI_ERROR);
       return;
     }
-    const message = bleErrorMessage(err);
+    const message = native ? nativeErrorMessage(err) : bleErrorMessage(err);
     if (message) showError(err.name === 'NotFoundError' && await isBluetoothOff() ? BLUETOOTH_OFF : message);
   }
 };
@@ -606,8 +610,12 @@ for (const [key, s] of Object.entries(SLIDERS)) {
 // ---------- แจ้งเตือนบนมือถือ ----------
 const vibrateSupported = 'vibrate' in navigator;
 const notifySupported = 'Notification' in window;
+// แอป Android: เปิดทั้งสองอย่างไว้ก่อน เพราะเป็นเหตุผลหลักที่ใช้แอป
+const nativePref = key => prefs.get(key, '1') === '1';
+const syncNativeAlerts = () => { if (native) link.setAlerts(nativePref('vibrate'), nativePref('notify')); };
 
 const fireMobileAlert = async () => {
+  if (native) return; // บริการของแอปแจ้งเตือนเอง
   const wantsVibrate = prefs.get('vibrate', '0') === '1';
   const wantsNotify = prefs.get('notify', '0') === '1';
   if (wantsVibrate && vibrateSupported) navigator.vibrate([300, 150, 300]);
@@ -625,6 +633,14 @@ const fireMobileAlert = async () => {
 };
 
 const renderNotifySettings = () => {
+  if (native) {
+    for (const [id, note, key] of [['vibrateToggle', 'vibrateNote', 'vibrate'], ['notifyToggle', 'notifyNote', 'notify']]) {
+      $(id).disabled = false;
+      $(id).checked = nativePref(key);
+      setText(note, 'ทำงานแม้ปิดจอหรือใช้แอปอื่นอยู่');
+    }
+    return;
+  }
   const vib = $('vibrateToggle');
   vib.disabled = !vibrateSupported;
   vib.checked = vibrateSupported && prefs.get('vibrate', '0') === '1';
@@ -648,10 +664,16 @@ const renderNotifySettings = () => {
 
 $('vibrateToggle').addEventListener('change', e => {
   prefs.set('vibrate', e.target.checked ? '1' : '0');
+  if (native) { syncNativeAlerts(); return; }
   if (e.target.checked) navigator.vibrate?.(200);
 });
 
 $('notifyToggle').addEventListener('change', async e => {
+  if (native) {
+    prefs.set('notify', e.target.checked ? '1' : '0');
+    syncNativeAlerts();
+    return;
+  }
   if (!e.target.checked) {
     prefs.set('notify', '0');
     return;
@@ -835,7 +857,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('pagehide', () => history.flush());
 
 // ---------- เริ่มทำงาน ----------
-if ('serviceWorker' in navigator && window.isSecureContext) {
+if (!native && 'serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('sw.js').catch(err => console.warn('ลงทะเบียน service worker ไม่สำเร็จ', err));
 }
 
@@ -847,3 +869,8 @@ renderNotifySettings();
 if (prefs.get('wizardSeen', '0') !== '1') openWizard();
 // เปิดหน้าเว็บจากตัวบอร์ดได้แปลว่าต่อ Wi-Fi อยู่แล้ว จึงเริ่มอ่านข้อมูลเลย
 if (overWifi) connectDevice();
+// เปิดแอปกลับมาตอนบริการยังเชื่อมต่ออยู่: รับข้อมูลต่อได้เลย
+if (native) {
+  syncNativeAlerts();
+  link.attach();
+}

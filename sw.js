@@ -1,6 +1,6 @@
 // Service worker: เก็บไฟล์ทั้งหมดไว้ตอนติดตั้ง เพื่อให้เปิดแอปได้แม้ไม่มีเน็ต
 // ใช้เน็ตก่อนถ้ามี (เวอร์ชันใหม่ขึ้นทันทีหลัง deploy) ถ้าเน็ตช้าหรือไม่มีจะใช้ไฟล์ที่เก็บไว้
-const CACHE = 'posture-alert-v3';
+const CACHE = 'posture-alert-v4';
 const NETWORK_TIMEOUT_MS = 3000;
 
 const FILES = [
@@ -13,6 +13,7 @@ const FILES = [
   'js/charts.js',
   'js/figure.js',
   'js/history.js',
+  'js/native.js',
   'js/protocol.js',
   'js/simulator.js',
   'js/util.js',

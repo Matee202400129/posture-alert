@@ -1,0 +1,41 @@
+// แอป Android ของ PostureAlert: ใช้หน้าเว็บในโฟลเดอร์หลักของโปรเจกต์เป็นหน้าตา (คัดลอกตอน build)
+// และมีบริการเบื้องหลังที่ถือการเชื่อมต่อ Bluetooth ไว้ จึงเตือนได้แม้ปิดจอ
+plugins {
+    id 'com.android.application'
+}
+
+def webOut = layout.buildDirectory.dir('generated/webassets').get().asFile
+
+android {
+    namespace 'com.posturealert.app'
+    compileSdk 35
+    buildToolsVersion '35.0.1'
+
+    defaultConfig {
+        applicationId 'com.posturealert.app'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        main {
+            assets.srcDir(webOut)
+        }
+    }
+}
+
+// คัดลอกหน้าเว็บเข้าแอปทุกครั้งที่ build จะได้ตรงกับเว็บเวอร์ชันล่าสุดเสมอ
+def copyWeb = tasks.register('copyWeb', Copy) {
+    from(rootProject.projectDir.parentFile) {
+        include 'index.html', 'manifest.webmanifest', 'css/**', 'js/**', 'fonts/**', 'icons/**'
+    }
+    into new File(webOut, 'web')
+}
+tasks.named('preBuild') { dependsOn copyWeb }
