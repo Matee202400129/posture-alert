@@ -427,7 +427,7 @@ th { color: var(--muted); font-weight: 500; }
 .slider-head label { font-weight: 500; }
 .slider-value { font-size: 1.375rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--accent); }
 .slider-ends { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
-input[type="range"] { width: 100%; height: 44px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+input[type="range"] { width: 100%; height: 48px; margin: 0; accent-color: var(--accent); cursor: pointer; }
 input[type="range"]:disabled { opacity: 0.4; cursor: not-allowed; }
 .device-reply { font-size: 0.8125rem; min-height: 1.6em; color: var(--muted); }
 .device-reply[data-state="ok"] { color: var(--ok); font-weight: 500; }
@@ -578,4 +578,56 @@ ol.plain-list { list-style: decimal; }
   .bar-seg, .swatch, .tone-dot { forced-color-adjust: none; }
   .switch input { -webkit-appearance: auto; appearance: auto; width: 24px; height: 24px; }
   .switch input::before { display: none; }
+}
+
+/* ---------- ขัดเกลาให้ดูพรีเมียม ---------- */
+/* เปลี่ยนแท็บ: ค่อย ๆ จางขึ้นพร้อมเลื่อนขึ้นเล็กน้อย */
+.view { animation: view-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes view-in { from { opacity: 0; transform: translateY(8px); } }
+
+/* การ์ดหลัก: ไล่เฉดอ่อนจากด้านบนตามสีสถานะ และเงาเรืองรอบเส้นวงแหวน */
+.hero { background-image: radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--ink) 12%, transparent), transparent 70%); }
+.hero[data-tone="idle"] { background-image: none; }
+.gauge-value { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ink) 40%, transparent)); }
+.hero[data-tone="idle"] .gauge-value { filter: none; }
+.tick { stroke: var(--muted); stroke-width: 1.5; stroke-linecap: round; opacity: 0.45; }
+.tick-major { stroke-width: 2; opacity: 0.7; }
+.tick-label { fill: var(--muted); font-size: 9px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.hero-head.is-pop { animation: state-pop 420ms cubic-bezier(0.3, 1.4, 0.5, 1); }
+@keyframes state-pop { 0% { transform: scale(0.86); opacity: 0.4; } 100% { transform: none; opacity: 1; } }
+.hero-thr { box-shadow: var(--shadow); }
+
+/* จุดสถานะ "เชื่อมต่อแล้ว" กะพริบเบา ๆ ให้รู้ว่าข้อมูลสด */
+.chip[data-link="connected"]::before { animation: live-dot 2s ease-out infinite; }
+@keyframes live-dot {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 55%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 7px transparent; }
+}
+
+/* การ์ดสถิติ: ไอคอนสีตามความหมาย */
+.tile-label { display: inline-flex; align-items: center; gap: 6px; }
+.tile-icon { width: 16px; height: 16px; stroke-width: 2.25; }
+.tile[data-tone="accent"] .tile-icon { color: var(--accent); }
+.tile[data-tone="ok"] .tile-icon { color: var(--ok); }
+.tile[data-tone="bad"] .tile-icon { color: var(--bad); }
+.tile[data-tone="warn"] .tile-icon { color: var(--warn); }
+
+/* ปุ่มลัด: ไอคอนตอนกดค้างเป็นสีหลัก */
+.btn-quick:active:not(:disabled) .quick-icon { background: var(--accent); color: var(--accent-text); }
+
+/* กล่องโต้ตอบ: เลื่อนขึ้นจากด้านล่างแบบ sheet ของ iOS */
+.dialog[open] { animation: sheet-in 320ms cubic-bezier(0.2, 0.9, 0.3, 1); }
+.dialog[open]::backdrop { animation: fade-in 240ms ease-out; }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(24px) scale(0.98); } }
+@keyframes fade-in { from { opacity: 0; } }
+
+/* ข้อความแจ้ง: เด้งขึ้นจากด้านล่าง */
+.toast:not([hidden]) { animation: toast-in 260ms cubic-bezier(0.2, 0.9, 0.3, 1); }
+@keyframes toast-in { from { opacity: 0; transform: translate(-50%, 12px); } }
+
+/* โหมดนำเสนอ: แสงเรืองด้านบนซ้ายให้มีมิติ */
+.present { background-image: radial-gradient(circle at 25% 20%, rgba(255, 255, 255, 0.16), transparent 55%); }
+
+@media (prefers-reduced-motion: reduce) {
+  .view, .hero-head.is-pop, .dialog[open], .dialog[open]::backdrop, .toast:not([hidden]), .chip[data-link="connected"]::before { animation: none !important; }
 }

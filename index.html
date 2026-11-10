@@ -40,6 +40,8 @@
       <symbol id="i-power" viewBox="0 0 24 24"><path d="M12 2v10M18.4 6.6a9 9 0 1 1-12.77.04"/></symbol>
       <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></symbol>
       <symbol id="i-save" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></symbol>
+      <symbol id="i-battery" viewBox="0 0 24 24"><rect x="2" y="7" width="16" height="10" rx="2"/><path d="M22 11v2M6 11v2"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
       <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
       <symbol id="i-back" viewBox="0 0 64 64"><path d="M29 8c-3 9 8 16 7 27-.7 8-7 13-9 21" stroke-width="9"/></symbol>
     </defs>
@@ -96,6 +98,7 @@
                 <!-- วงแหวน 270° ขีดดำคือเกณฑ์เตือน ส่วนที่เติมสีคือค่าความโค้งตอนนี้ (สเกล 0–45°) -->
                 <svg class="gauge-svg" viewBox="0 0 200 200" aria-hidden="true">
                   <circle class="gauge-track" cx="100" cy="100" r="86" pathLength="100" stroke-dasharray="75 100" transform="rotate(135 100 100)"/>
+                  <g id="gaugeTicks" class="gauge-ticks"></g>
                   <circle id="gaugeValue" class="gauge-value" cx="100" cy="100" r="86" pathLength="100" stroke-dasharray="0 100" transform="rotate(135 100 100)"/>
                   <line id="gaugeThr" class="gauge-thr" x1="172" y1="100" x2="198" y2="100" visibility="hidden"/>
                 </svg>
@@ -184,23 +187,23 @@
 
         <h2 class="section-label">ตั้งแต่เปิดเครื่องครั้งนี้</h2>
         <div class="tiles">
-          <div class="tile">
-            <span class="tile-label">แบตเตอรี่</span>
+          <div class="tile" data-tone="accent">
+            <span class="tile-label"><svg class="icon tile-icon" aria-hidden="true"><use href="#i-battery"/></svg>แบตเตอรี่</span>
             <span id="statBatt" class="tile-value">–</span>
             <span class="meter" aria-hidden="true"><span id="statBattBar"></span></span>
             <span id="statBattMv" class="tile-sub"></span>
           </div>
-          <div class="tile">
-            <span class="tile-label">เวลานั่งตรง</span>
+          <div class="tile" data-tone="ok">
+            <span class="tile-label"><svg class="icon tile-icon" aria-hidden="true"><use href="#i-ok"/></svg>เวลานั่งตรง</span>
             <span id="statPct" class="tile-value">–</span>
             <span id="statGood" class="tile-sub"></span>
           </div>
-          <div class="tile">
-            <span class="tile-label">เวลาหลังค่อม</span>
+          <div class="tile" data-tone="bad">
+            <span class="tile-label"><svg class="icon tile-icon" aria-hidden="true"><use href="#i-warn"/></svg>เวลาหลังค่อม</span>
             <span id="statSlouch" class="tile-value tile-value-sm">–</span>
           </div>
-          <div class="tile">
-            <span class="tile-label">จำนวนครั้งที่เตือน</span>
+          <div class="tile" data-tone="warn">
+            <span class="tile-label"><svg class="icon tile-icon" aria-hidden="true"><use href="#i-bell"/></svg>จำนวนครั้งที่เตือน</span>
             <span id="statAlerts" class="tile-value">–</span>
           </div>
         </div>

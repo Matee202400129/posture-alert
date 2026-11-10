@@ -272,6 +272,43 @@ const setGauge = (value, thr) => {
   if (thr != null) tick.setAttribute('transform', `rotate(${(135 + 270 * gaugeRatio(thr)).toFixed(1)} 100 100)`);
 };
 
+// ขีดสเกลทุก 5° ด้านในวงแหวน ขีดยาวที่ 0, 15, 30, 45 พร้อมป้าย 0° กับ 45° ที่ปลายสองข้าง
+(() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const group = $('gaugeTicks');
+  for (let d = 0; d <= GAUGE_MAX; d += 5) {
+    const major = d % 15 === 0;
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('x1', major ? 166 : 169);
+    line.setAttribute('x2', 174);
+    line.setAttribute('y1', 100);
+    line.setAttribute('y2', 100);
+    line.setAttribute('transform', `rotate(${135 + 270 * gaugeRatio(d)} 100 100)`);
+    line.setAttribute('class', major ? 'tick tick-major' : 'tick');
+    group.append(line);
+  }
+  for (const [d, anchor] of [[0, 'start'], [GAUGE_MAX, 'end']]) {
+    const a = (135 + 270 * gaugeRatio(d)) * Math.PI / 180;
+    const label = document.createElementNS(NS, 'text');
+    label.setAttribute('x', (100 + 70 * Math.cos(a) + (anchor === 'start' ? 2 : -2)).toFixed(1));
+    label.setAttribute('y', (100 + 70 * Math.sin(a) + 14).toFixed(1));
+    label.setAttribute('text-anchor', anchor);
+    label.setAttribute('class', 'tick-label');
+    label.textContent = `${d}°`;
+    group.append(label);
+  }
+})();
+
+// เปลี่ยนสถานะเมื่อไหร่ ให้ป้ายสถานะเด้งเบา ๆ หนึ่งครั้ง
+const setHeroTone = (hero, tone) => {
+  if (hero.dataset.tone === tone) return;
+  hero.dataset.tone = tone;
+  const head = hero.querySelector('.hero-head');
+  head.classList.remove('is-pop');
+  void head.offsetWidth;
+  head.classList.add('is-pop');
+};
+
 const renderHero = (p, stale) => {
   const hero = $('hero');
   if (!p) {
@@ -286,7 +323,7 @@ const renderHero = (p, stale) => {
   }
   const info = stateInfo(p);
   setGauge(p.state === STATE.SENSOR ? 0 : p.curve, effectiveThreshold(p));
-  hero.dataset.tone = stale ? 'idle' : info.tone;
+  setHeroTone(hero, stale ? 'idle' : info.tone);
   hero.classList.toggle('is-stale', stale);
   $('heroIcon').setAttribute('href', `#${info.icon}`);
   setText('heroState', stale ? `ค่าล่าสุด: ${info.label}` : info.label);
